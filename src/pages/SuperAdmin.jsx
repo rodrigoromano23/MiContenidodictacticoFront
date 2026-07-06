@@ -321,8 +321,39 @@ export default function SuperAdmin() {
 
     setLoading(true);
     try {
-      // Reemplaza esta ruta si tu endpoint de login en Express usa otra URL (ej: /api/superadmin/login)
-      // 📊 TRAER ESTADÍSTICAS ENVIANDO LA CLAVE DE FORMA SEGURA
+      const respuesta = await fetch(`${API_URL}/api/superadmin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: clave })
+      });
+
+      const datos = await respuesta.json();
+
+      if (respuesta.ok && datos.role === "superadmin") {
+        setIsAuth(true);
+        Swal.fire({
+          icon: "success",
+          title: "Acceso Concedido",
+          text: "Bienvenido al Panel de Control Global",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire("Clave Incorrecta", datos.message || "Verifica las credenciales de seguridad.", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error de Conexión", "No se pudo conectar con el servidor backend.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDownLogin = (e) => {
+    if (e.key === "Enter") handleLogin();
+  };
+
+  // 📊 TRAER ESTADÍSTICAS ENVIANDO LA CLAVE DE FORMA SEGURA (CORREGIDO)
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -341,40 +372,13 @@ export default function SuperAdmin() {
         const total = result.reduce((acc, item) => acc + item.total, 0);
         setTotalPublicaciones(total);
       } else {
-        // Muestra el mensaje exacto que configuramos en el Backend (ej: "No autorizado", "Password requerida", etc.)
+        // Captura el mensaje real configurado en el backend
         throw new Error(stats.message || `Código de estado: ${respuesta.status}`);
       }
     } catch (error) {
       console.error(error);
-      // 🔥 Cambiamos el SweetAlert para que te muestre el error real en la pantalla
+      // 🔥 SweetAlert te mostrará el error real del backend en la pantalla
       Swal.fire("Error en el Servidor", error.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 📊 TRAER ESTADÍSTICAS PROCESADAS DESDE EL BACKEND
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Reemplaza esta ruta por la URL exacta que use tu router para activar 'getSuperAdminStats'
-      const respuesta = await fetch(`${API_URL}/api/superadmin/stats`);
-      const stats = await respuesta.json();
-
-      if (respuesta.ok) {
-        // Ordenamos de mayor a menor según el total de publicaciones
-        const result = stats.sort((a, b) => b.total - a.total);
-        setData(result);
-
-        // Sumamos el total de todas las publicaciones globales
-        const total = result.reduce((acc, item) => acc + item.total, 0);
-        setTotalPublicaciones(total);
-      } else {
-        throw new Error("Error en la respuesta del servidor");
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "No se pudieron compilar las estadísticas globales del backend.", "error");
     } finally {
       setLoading(false);
     }
