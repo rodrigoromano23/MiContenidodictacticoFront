@@ -322,13 +322,17 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       // Reemplaza esta ruta si tu endpoint de login en Express usa otra URL (ej: /api/superadmin/login)
+      // 📊 TRAER ESTADÍSTICAS ENVIANDO LA CLAVE DE FORMA SEGURA
+  const fetchData = async () => {
+    setLoading(true);
+    try {
       const respuesta = await fetch(`${API_URL}/api/superadmin/stats`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: clave })
+        body: JSON.stringify({ password: clave }) 
       });
-
-      const datos = await respuesta.json();
+      
+      const stats = await respuesta.json();
 
       if (respuesta.ok) {
         const result = stats.sort((a, b) => b.total - a.total);
@@ -337,17 +341,16 @@ export default function SuperAdmin() {
         const total = result.reduce((acc, item) => acc + item.total, 0);
         setTotalPublicaciones(total);
       } else {
-        throw new Error(stats.message || "Error en la respuesta del servidor");
+        // Muestra el mensaje exacto que configuramos en el Backend (ej: "No autorizado", "Password requerida", etc.)
+        throw new Error(stats.message || `Código de estado: ${respuesta.status}`);
       }
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "No se pudieron compilar las estadísticas globales del backend.", "error");
+      // 🔥 Cambiamos el SweetAlert para que te muestre el error real en la pantalla
+      Swal.fire("Error en el Servidor", error.message, "error");
     } finally {
       setLoading(false);
     }
-  };
-  const handleKeyDownLogin = (e) => {
-    if (e.key === "Enter") handleLogin();
   };
 
   // 📊 TRAER ESTADÍSTICAS PROCESADAS DESDE EL BACKEND
