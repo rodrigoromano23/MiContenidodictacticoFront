@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+/*import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { 
   ShieldCheck, 
@@ -284,9 +284,9 @@ export default function SuperAdmin() {
       </main>
     </div>
   );
-}
+}*/
 
-/*import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { 
   ShieldCheck, 
@@ -299,8 +299,10 @@ import {
   Search,
   CheckCircle2
 } from "lucide-react";
-import { getMaterials } from "../services/api";
 import Loader from "../components/Loader";
+
+// Traemos la URL base de tu backend (ej: https://tu-backend.onrender.com)
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function SuperAdmin() {
   const [clave, setClave] = useState("");
@@ -310,34 +312,25 @@ export default function SuperAdmin() {
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Traemos la URL base de tu backend desde las variables de entorno de Vite
-  const API_URL = import.meta.env.VITE_API_URL;
-
-  // LOGIN CONECTADO AL BACKEND (RUTA CORREGIDA)
+  // 🔐 LOGIN SEGURO POR BACKEND
   const handleLogin = async () => {
     if (!clave.trim()) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campo Vacío",
-        text: "Por favor, introduce la clave maestra para continuar.",
-        confirmButtonColor: "#06b6d4"
-      });
+      Swal.fire("Atención", "Por favor, introduce la clave maestra.", "warning");
       return;
     }
 
     setLoading(true);
-
     try {
-      // Apuntamos a la ruta exacta de tu backend Express (/api/auth/login)
-      const respuesta = await fetch(`${API_URL}/api/auth/login`, {
+      // Reemplaza esta ruta si tu endpoint de login en Express usa otra URL (ej: /api/superadmin/login)
+      const respuesta = await fetch(`${API_URL}/api/auth/login-superadmin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: clave }) // Asegúrate de que tu backend reciba 'password'
+        body: JSON.stringify({ password: clave })
       });
 
       const datos = await respuesta.json();
 
-      if (respuesta.ok && datos.auth) {
+      if (respuesta.ok && datos.role === "superadmin") {
         setIsAuth(true);
         Swal.fire({
           icon: "success",
@@ -347,21 +340,11 @@ export default function SuperAdmin() {
           showConfirmButton: false,
         });
       } else {
-        Swal.fire({
-          icon: "error",
-          title: "Clave Incorrecta",
-          text: datos.message || "Verifica las credenciales de seguridad de SuperAdmin.",
-          confirmButtonColor: "#ef4444"
-        });
+        Swal.fire("Clave Incorrecta", datos.message || "Verifica las credenciales de seguridad.", "error");
       }
     } catch (error) {
-      console.error("Error en el login de SuperAdmin:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error de Conexión",
-        text: "No se pudo conectar con el servidor de autenticación. Intenta más tarde.",
-        confirmButtonColor: "#3b82f6"
-      });
+      console.error(error);
+      Swal.fire("Error de Conexión", "No se pudo conectar con el servidor backend.", "error");
     } finally {
       setLoading(false);
     }
@@ -371,29 +354,28 @@ export default function SuperAdmin() {
     if (e.key === "Enter") handleLogin();
   };
 
+  // 📊 TRAER ESTADÍSTICAS PROCESADAS DESDE EL BACKEND
   const fetchData = async () => {
     setLoading(true);
     try {
-      const materials = await getMaterials();
-      setTotalPublicaciones(materials.length);
+      // Reemplaza esta ruta por la URL exacta que use tu router para activar 'getSuperAdminStats'
+      const respuesta = await fetch(`${API_URL}/api/auth/stats-superadmin`);
+      const stats = await respuesta.json();
 
-      const grouped = materials.reduce((acc, item) => {
-        const docente = item.docente || "Sin docente";
-        acc[docente] = (acc[docente] || 0) + 1;
-        return acc;
-      }, {});
+      if (respuesta.ok) {
+        // Ordenamos de mayor a menor según el total de publicaciones
+        const result = stats.sort((a, b) => b.total - a.total);
+        setData(result);
 
-      const result = Object.entries(grouped).map(
-        ([docente, cantidad]) => ({
-          docente,
-          cantidad,
-        })
-      ).sort((a, b) => b.cantidad - a.cantidad);
-
-      setData(result);
+        // Sumamos el total de todas las publicaciones globales
+        const total = result.reduce((acc, item) => acc + item.total, 0);
+        setTotalPublicaciones(total);
+      } else {
+        throw new Error("Error en la respuesta del servidor");
+      }
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "No se pudieron compilar las estadísticas globales.", "error");
+      Swal.fire("Error", "No se pudieron compilar las estadísticas globales del backend.", "error");
     } finally {
       setLoading(false);
     }
@@ -416,41 +398,34 @@ export default function SuperAdmin() {
     item.docente.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const maxPublicaciones = data.length > 0 ? data[0].cantidad : 1;
+  const maxPublicaciones = data.length > 0 ? data[0].total : 1;
 
+  // 🔐 FORMULARIO DE ACCESO (LOGIN)
   if (!isAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="w-full h-full bg-[radial-gradient(circle_at_30%_20%,#06b6d4_0px,transparent_40%),radial-gradient(circle_at_70%_60%,#3b82f6_0px,transparent_50%)]" />
-        </div>
-
         <div className="relative z-10 bg-slate-900/60 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl shadow-2xl w-[380px] text-center space-y-6">
           <div className="mx-auto w-12 h-12 bg-cyan-500/10 border border-cyan-500/30 rounded-xl flex items-center justify-center text-cyan-400">
             <Lock className="w-5 h-5" />
           </div>
-
           <div>
             <h1 className="text-white text-2xl font-bold tracking-wide">Acceso Consola</h1>
             <p className="text-xs text-slate-400 mt-1">Introduce la clave maestra de SuperAdmin</p>
           </div>
-
           <div className="flex overflow-hidden rounded-xl border border-white/10 bg-slate-950/60 focus-within:border-cyan-500 transition duration-300">
             <input
               type="password"
               placeholder="••••"
               value={clave}
-              disabled={loading}
               onKeyDown={handleKeyDownLogin}
               onChange={(e) => setClave(e.target.value)}
-              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest disabled:opacity-50"
+              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest"
             />
             <button
               onClick={handleLogin}
-              disabled={loading}
-              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold disabled:opacity-50"
+              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold"
             >
-              {loading ? "..." : <ArrowRight className="w-4 h-4" />}
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -458,6 +433,7 @@ export default function SuperAdmin() {
     );
   }
 
+  // 📊 PANEL DE CONTROL ANALÍTICO
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       <header className="bg-slate-900/80 backdrop-blur-md border-b border-white/10 flex justify-between items-center px-6 py-4 sticky top-0 z-50">
@@ -470,7 +446,6 @@ export default function SuperAdmin() {
             <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Auditoría Global</span>
           </div>
         </div>
-
         <button
           onClick={logout}
           className="flex items-center gap-2 bg-slate-950 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 text-slate-400 hover:text-red-400 px-4 py-2 rounded-xl text-xs font-semibold transition duration-300"
@@ -501,7 +476,6 @@ export default function SuperAdmin() {
                   <BookOpen className="w-6 h-6" />
                 </div>
               </div>
-
               <div className="bg-slate-900/40 border border-white/5 p-5 rounded-2xl flex items-center justify-between shadow-xl">
                 <div className="space-y-1">
                   <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Profesores Activos</p>
@@ -540,7 +514,8 @@ export default function SuperAdmin() {
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {datosFiltrados.map((item, index) => {
-                      const porcentaje = Math.round((item.cantidad / maxPublicaciones) * 100);
+                      const porcentaje = Math.round((item.total / maxPublicaciones) * 100);
+                      
                       return (
                         <tr key={index} className="hover:bg-white/[0.02] transition duration-200 group">
                           <td className="px-6 py-4 font-medium text-slate-200 flex items-center gap-2.5">
@@ -562,7 +537,7 @@ export default function SuperAdmin() {
                           </td>
                           <td className="px-6 py-4 text-right font-mono font-bold text-base text-cyan-400">
                             <div className="flex items-center justify-end gap-1.5">
-                              {item.cantidad}
+                              {item.total}
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 opacity-0 group-hover:opacity-100 transition" />
                             </div>
                           </td>
@@ -586,4 +561,4 @@ export default function SuperAdmin() {
       </main>
     </div>
   );
-}*/
+}
