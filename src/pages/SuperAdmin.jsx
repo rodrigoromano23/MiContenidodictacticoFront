@@ -363,21 +363,22 @@ export default function SuperAdmin() {
         body: JSON.stringify({ password: clave }) 
       });
       
-      const stats = await respuesta.json();
+      // Primero obtenemos el texto o json crudo de la respuesta
+      const datosBackend = await respuesta.json();
 
       if (respuesta.ok) {
-        const result = stats.sort((a, b) => b.total - a.total);
+        const result = datosBackend.sort((a, b) => b.total - a.total);
         setData(result);
 
         const total = result.reduce((acc, item) => acc + item.total, 0);
         setTotalPublicaciones(total);
       } else {
-        // Captura el mensaje real configurado en el backend
-        throw new Error(stats.message || `Código de estado: ${respuesta.status}`);
+        // Si el backend responde con un error (ej: 401, 403, 500), lanzamos el error con su mensaje
+        throw new Error(datosBackend.message || `Error del servidor (Código: ${respuesta.status})`);
       }
     } catch (error) {
-      console.error(error);
-      // 🔥 SweetAlert te mostrará el error real del backend en la pantalla
+      console.error("Error capturado en frontend:", error);
+      // Ahora sí, error.message tiene el texto real sin romper la aplicación
       Swal.fire("Error en el Servidor", error.message, "error");
     } finally {
       setLoading(false);
