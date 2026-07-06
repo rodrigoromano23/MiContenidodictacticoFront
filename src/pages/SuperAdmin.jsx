@@ -310,10 +310,11 @@ export default function SuperAdmin() {
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Leemos la clave de forma segura desde las variables de entorno de Vite
-  const CLAVE_SUPERADMIN = import.meta.env.VITE_CLAVE_SUPERADMIN;
+  // Traemos la URL base de tu backend desde las variables de entorno de Vite
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  const handleLogin = () => {
+  // LOGIN CONECTADO AL BACKEND (RUTA CORREGIDA)
+  const handleLogin = async () => {
     if (!clave.trim()) {
       Swal.fire({
         icon: "warning",
@@ -324,23 +325,45 @@ export default function SuperAdmin() {
       return;
     }
 
-    // Comparamos directamente con la variable de entorno
-    if (clave === CLAVE_SUPERADMIN) {
-      setIsAuth(true);
-      Swal.fire({
-        icon: "success",
-        title: "Acceso Concedido",
-        text: "Bienvenido al Panel de Control Global",
-        timer: 1500,
-        showConfirmButton: false,
+    setLoading(true);
+
+    try {
+      // Apuntamos a la ruta exacta de tu backend Express (/api/auth/login)
+      const respuesta = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: clave }) // Asegúrate de que tu backend reciba 'password'
       });
-    } else {
+
+      const datos = await respuesta.json();
+
+      if (respuesta.ok && datos.auth) {
+        setIsAuth(true);
+        Swal.fire({
+          icon: "success",
+          title: "Acceso Concedido",
+          text: "Bienvenido al Panel de Control Global",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Clave Incorrecta",
+          text: datos.message || "Verifica las credenciales de seguridad de SuperAdmin.",
+          confirmButtonColor: "#ef4444"
+        });
+      }
+    } catch (error) {
+      console.error("Error en el login de SuperAdmin:", error);
       Swal.fire({
         icon: "error",
-        title: "Clave Incorrecta",
-        text: "Verifica las credenciales de seguridad de SuperAdmin.",
-        confirmButtonColor: "#ef4444"
+        title: "Error de Conexión",
+        text: "No se pudo conectar con el servidor de autenticación. Intenta más tarde.",
+        confirmButtonColor: "#3b82f6"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -417,15 +440,17 @@ export default function SuperAdmin() {
               type="password"
               placeholder="••••"
               value={clave}
+              disabled={loading}
               onKeyDown={handleKeyDownLogin}
               onChange={(e) => setClave(e.target.value)}
-              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest"
+              className="flex-1 p-3.5 bg-transparent text-white text-center font-mono outline-none placeholder-slate-600 tracking-widest disabled:opacity-50"
             />
             <button
               onClick={handleLogin}
-              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold"
+              disabled={loading}
+              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 px-5 flex items-center justify-center transition font-bold disabled:opacity-50"
             >
-              <ArrowRight className="w-4 h-4" />
+              {loading ? "..." : <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
         </div>
