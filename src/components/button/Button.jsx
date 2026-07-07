@@ -415,7 +415,7 @@ export default function ButtonPanel({
     {/* 🔼 PANEL FLOTANTE DESPLEGABLE (Emerge hacia arriba en mobile sin tapar todo) */}
     <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
       isOpen 
-        ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-40 md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l" 
+        ? "fixed inset-x-4 bottom-24 h-[45vh] rounded-2xl border z-[100] md:relative md:inset-auto md:w-[380px] md:h-full md:rounded-none md:border-t-0 md:border-l" 
         : "fixed inset-x-4 bottom-0 h-0 w-0 opacity-0 pointer-events-none md:relative md:w-0 md:h-full md:opacity-100 md:pointer-events-auto"
     }`}>
       <div className={`h-full p-5 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
