@@ -17,7 +17,7 @@ export default function Home() {
   // Estado para controlar qué sección del panel cuadrado está expandida en Mobile
   const [seccionAbierta, setSeccionAbierta] = useState(null);
   
-  // VISOR DE IMAGENES
+  // VISOR DE IMANES
   const [selectedImage, setSelectedImage] = useState(null);
   
   const cleanUrl = (url) => {
@@ -191,6 +191,14 @@ export default function Home() {
           background: rgba(56, 189, 248, 0.3);
           border-radius: 4px;
         }
+        /* Ocultar barra de scroll en el footer horizontal móvil */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
       <VoiceAssistant
@@ -212,11 +220,11 @@ export default function Home() {
       {/* ========================================== */}
       {/* 📱 INTERFAZ EXCLUSIVA PARA DISPOSITIVOS MÓVILES */}
       {/* ========================================== */}
-      <div className="flex md:hidden flex-1 flex-col relative overflow-y-auto w-full z-10 px-4 pb-8 pt-24">
+      <div className="flex md:hidden flex-1 flex-col relative w-full h-full z-10 overflow-hidden">
         
-        {/* Barra de búsqueda móvil reactiva */}
+        {/* Barra de búsqueda móvil reactiva (Arriba cuando busca / Al centro al inicio) */}
         <div className={`transition-all duration-500 ease-in-out left-0 w-full px-4 z-30 ${
-          isCompact ? "fixed top-4" : "absolute top-1/3 -translate-y-1/2"
+          isCompact ? "absolute top-4" : "absolute top-1/3 -translate-y-1/2"
         }`}>
           {!isCompact && (
             <div className="text-center mb-4">
@@ -245,9 +253,9 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bloque principal móvil */}
+        {/* Bloque principal móvil con scroll (Dejando espacio para el buscador y footer) */}
         {searched && results.length > 0 && (
-          <div className="w-full space-y-6 mt-4">
+          <div className="w-full flex-1 overflow-y-auto px-4 pt-24 pb-28 space-y-6">
             
             {/* Título Dinámico Principal */}
             <div className="text-center pt-2">
@@ -257,103 +265,10 @@ export default function Home() {
               <div className="h-[2px] bg-cyan-400 max-w-[150px] mx-auto mt-2 opacity-80" />
             </div>
 
-            {/* 🎛️ PANEL BUTTON COMPLETO (7 FUNCIONALIDADES EN RECTÁNGULOS) */}
-            <div className="max-w-sm mx-auto grid grid-cols-3 gap-2.5 bg-slate-900/60 p-3 rounded-2xl border border-white/10 backdrop-blur-md shadow-2xl">
-              
-              {/* 1. Historial */}
-              <button
-                onClick={() => toggleSeccionMobile("historial")}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "historial" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">⏳</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Historial</span>
-              </button>
-
-              {/* 2. Palabras Claves */}
-              <button
-                onClick={() => toggleSeccionMobile("keywords")}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "keywords" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">🔑</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Palabras Clave</span>
-              </button>
-
-              {/* 3. Gramática */}
-              <button
-                onClick={() => toggleSeccionMobile("gramatica")}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "gramatica" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">📝</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Gramática</span>
-              </button>
-
-              {/* 4. Narrador */}
-              <button
-                onClick={() => toggleSeccionMobile("narrador")}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "narrador" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">🗣️</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Narrador</span>
-              </button>
-
-              {/* 5. Juego (Cálculos) */}
-              <button
-                onClick={() => toggleSeccionMobile("juego")}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "juego" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">🎮</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Juego</span>
-              </button>
-
-              {/* 6. Micrófono */}
-              <button
-                onClick={() => {
-                  setMicEnabled(!micEnabled);
-                  toggleSeccionMobile("micro");
-                }}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  micEnabled 
-                    ? "bg-red-500/20 border-red-500 text-red-400 font-bold shadow-lg shadow-red-500/10" 
-                    : seccionAbierta === "micro"
-                    ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold"
-                    : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">{micEnabled ? "🛑" : "🎙️"}</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">Micrófono</span>
-              </button>
-
-              {/* 7. Descargar PDF */}
-              <button
-                onClick={() => {
-                  toggleSeccionMobile("pdf");
-                  handleDescargarPDF();
-                }}
-                className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all duration-200 ${
-                  seccionAbierta === "pdf" ? "bg-cyan-500 text-slate-950 border-cyan-400 font-bold" : "bg-slate-950/80 text-slate-300 border-white/5"
-                }`}
-              >
-                <span className="text-lg">📄</span>
-                <span className="text-[9px] uppercase font-bold tracking-tight mt-0.5">PDF</span>
-              </button>
-
-            </div>
-
-            {/* 📥 CONTENEDORES DESPLEGABLES ASOCIADOS A CADA BOTÓN */}
+            {/* 📥 CONTENEDORES DESPLEGABLES (Se abren arriba de la caja de contenido) */}
             <div className="max-w-sm mx-auto w-full">
-              
               {seccionAbierta === "historial" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-2">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-2 mb-4">
                   <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Búsquedas Recientes</p>
                   {searchHistory.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 pt-1">
@@ -368,47 +283,46 @@ export default function Home() {
               )}
 
               {seccionAbierta === "keywords" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1 mb-4">
                   <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Palabras Clave del Tema</p>
                   <p className="text-slate-300 pt-1">Aquí van las palabras clave extraídas automáticamente de: <span className="text-white italic">"{results[0].titulo}"</span>.</p>
                 </div>
               )}
 
               {seccionAbierta === "gramatica" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1 mb-4">
                   <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Análisis Gramatical</p>
                   <p className="text-slate-300 pt-1">Módulo interactivo para analizar las estructuras sintácticas y tiempos verbales del texto actual.</p>
                 </div>
               )}
 
               {seccionAbierta === "narrador" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-2">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-2 mb-4">
                   <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Texto a Voz (TTS)</p>
                   <button className="bg-cyan-500 text-slate-950 font-bold px-4 py-1.5 rounded-full text-[11px] uppercase tracking-wider shadow-md">▶️ Escuchar Contenido</button>
                 </div>
               )}
 
               {seccionAbierta === "juego" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1.5">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs space-y-1.5 mb-4">
                   <p className="text-cyan-400 font-bold font-mono text-[10px] uppercase tracking-wider border-b border-white/5 pb-1">Desafío Matemático (Cálculos)</p>
                   <p className="text-slate-300">¡Hora de agilizar la mente! Resolvé el siguiente cálculo basado en el contenido didáctico.</p>
                 </div>
               )}
 
               {seccionAbierta === "micro" && (
-                <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1">
+                <div className="bg-slate-900/90 border border-red-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1 mb-4">
                   <p className="text-red-400 font-bold font-mono text-[10px] uppercase tracking-wider">Asistente por Voz</p>
                   <p className="text-slate-300">Micrófono {micEnabled ? "ACTIVADO" : "DESACTIVADO"}. Comandos de control listos para escuchar.</p>
                 </div>
               )}
 
               {seccionAbierta === "pdf" && (
-                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1">
+                <div className="bg-slate-900/90 border border-cyan-500/30 p-4 rounded-xl animate-fadeIn shadow-xl text-xs text-center space-y-1 mb-4">
                   <p className="text-emerald-400 font-bold font-mono text-[10px] uppercase tracking-wider">Documento Exportado</p>
                   <p className="text-slate-300">El PDF se ha estructurado con éxito para su lectura offline.</p>
                 </div>
               )}
-
             </div>
 
             {/* CAJA PRINCIPAL DE CONTENIDO */}
@@ -418,7 +332,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* IMÁGENES AL PIE */}
+            {/* IMÁGENES ABAJO DEL CONTENIDO */}
             {getImagesArray(results[0]).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest pl-1">Imágenes Adjuntas</p>
@@ -438,6 +352,14 @@ export default function Home() {
 
         {searched && results.length === 0 && !loading && (
           <p className="text-center text-xs text-slate-400 mt-20">No se encontraron resultados disponibles.</p>
+        )}
+
+        {/* 🎛️ FOOTER FIJO CON SCROLL HORIZONTAL (Acá inyectaremos tu ButtonPanel Móvil) */}
+        {searched && (
+          <div className="fixed bottom-0 left-0 w-full bg-slate-900/85 backdrop-blur-md border-t border-white/10 px-4 py-3 z-40 overflow-x-auto no-scrollbar flex items-center gap-5">
+            {/* ESPACIO RESERVADO PARA RE-INCORPORAR TUS BOTONES REDONDOS ORIGINALES CON EL PROPIO COMPONENTE */}
+            <p className="text-[10px] uppercase font-bold tracking-widest text-slate-500 whitespace-nowrap">Deslice opciones ➔</p>
+          </div>
         )}
       </div>
 

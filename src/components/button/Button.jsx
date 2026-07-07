@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { History, KeyRound, Brain, Volume2, Mic, Play, Pause, Square, FileDown } from "lucide-react";
+import { History, KeyRound, Brain, Volume2, Mic, Play, Pause, Square, FileDown, Gamepad2 } from "lucide-react";
 import TypeWriter from "../TypeWriter";
 import useSpeech from "../../hooks/useSpeech";
 import CalcGame from "../CalcGame";
 import Swal from "sweetalert2";
-import { jsPDF } from "jspdf"; // 📄 Importamos jsPDF para generar el documento
+import { jsPDF } from "jspdf"; 
 
 const SECTIONS = {
   history: "Historial",
@@ -34,8 +34,6 @@ export default function ButtonPanel({
   const { speak, pause, resume, stop } = useSpeech();
 
   const isOpen = active !== null;
-
-  // Creamos una referencia persistente para que el motor de voz siempre ejecute la lógica actualizada
   const procesarComandoRef = useRef(null);
 
   const notificarComando = (mensaje) => {
@@ -43,11 +41,9 @@ export default function ButtonPanel({
   };
 
   const procesarComandoVozGlobal = (frase) => {
-    // 🎯 LIMPIEZA INICIAL: Volamos absolutamente todos los puntos y comas molestos
     const fraseLimpia = frase.replace(/[\.,]+/g, "").trim();
     console.log("Procesando frase limpia en Panel:", fraseLimpia);
 
-    // 🔔 NUEVA: Función interna para lanzar las notificaciones visuales elegantes (Toast)
     const lanzarNotificacion = (mensaje, icon = "success") => {
       Swal.fire({
         toast: true,
@@ -59,31 +55,27 @@ export default function ButtonPanel({
         timerProgressBar: true,
         background: "#0f172a",
         color: "#fff",
-        iconColor: "#22d3ee", // Cyan combinado con tu UI
+        iconColor: "#22d3ee",
         didOpen: (toast) => {
-          // Evita que cierres accidentales de otros componentes oculten el Toast
           toast.addEventListener('mouseenter', Swal.stopTimer);
-          toast.addEventListener('mouseleave', Swal.resumeTimer);}
+          toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
       });
     };
 
-    // 📄 1. CONTROL DE DESCARGA DE PDF POR VOZ
     const comandosPDF = ["descargar pdf", "exportar pdf", "guardar pdf", "bajar pdf"];
     if (comandosPDF.some(keyword => fraseLimpia.includes(keyword))) {
       exportarAPDF(); 
       return;
     }
 
-    // 🔍 2. CONTROL DE BUSCADOR DE TÍTULOS EXTERNO (HOME)
     if (fraseLimpia.startsWith("buscar ") || fraseLimpia.startsWith("filtrar ")) {
       let terminoBusqueda = fraseLimpia.replace(/^(buscar|filtrar)\s+/, "").trim();
-      
       window.dispatchEvent(new CustomEvent("voz-buscar-titulo", { detail: terminoBusqueda }));
       notificarComando(`Buscando: "${terminoBusqueda}"`);
       return;
     }
 
-    // 🖼️ 3. CONTROL DEL VISOR DE IMÁGENES EN GRANDE (Utiliza los números expuestos por el Hover)
     const abrirVisorKeywords = ["galería", "galeria", "ampliar", "expandir", "ver fotos", "ver imagenes", "ver imágenes", "abrir imagen", "abrir foto", "abrir la imagen"];
     const cerrarVisorKeywords = ["cerrar", "quitar", "ocultar foto", "ocultar galería", "salir de la imagen", "cerrar imagen"];
 
@@ -126,13 +118,12 @@ export default function ButtonPanel({
       return;
     }
 
-    // 🖼️ 4. CONTROL DE SCROLL DE IMÁGENES ABAJO DEL CONTENIDO
     if (fraseLimpia.includes("bajar a") || fraseLimpia.includes("ir a las fotos") || fraseLimpia.includes("desplazar a")) {
       window.dispatchEvent(new CustomEvent("comando-hacer-scroll-imagenes"));
       notificarComando("Desplazando a las imágenes");
       return;
     } 
-    // 🎛️ 5. NUEVO: COMANDO GENERAL PARA CERRAR CUALQUIER PANEL BLINDADO
+
     const comandosCerrarPanel = ["cerrar panel", "ocultar panel", "cerrar menú", "cerrar menu", "ocultar menú", "quitar panel", "salir del panel"];
     if (comandosCerrarPanel.some(keyword => fraseLimpia === keyword || fraseLimpia.includes(keyword))) {
       setActive(null);
@@ -140,18 +131,16 @@ export default function ButtonPanel({
       return;
     }
 
-    // 🎛️ 6. MANIPULACIÓN LOCAL DEL PANEL LATERAL (BOTONES)
-
     const palabrasCierre = ["cerrar", "ocultar", "quitar", "salir"];
     const palabrasObjetivo = ["panel", "menú", "menu", "pestaña", "pestana", "lateral"];
 
     const quiereCerrarPanel = palabrasCierre.some(c => fraseLimpia.includes(c)) && 
-                           palabrasObjetivo.some(o => fraseLimpia.includes(o));
+                               palabrasObjetivo.some(o => fraseLimpia.includes(o));
 
     if (quiereCerrarPanel) {
-      setActive(null); // Resetea el estado a null, lo que contrae el panel por completo
+      setActive(null);
       lanzarNotificacion("Panel cerrado", "info");
-      return; // Fin de la función
+      return; 
     }
     if (fraseLimpia.includes("historial") || fraseLimpia.includes("abrir historial")) {
       setActive("history");
@@ -173,10 +162,8 @@ export default function ButtonPanel({
       setActive("Calculos");
       notificarComando("Abriendo juego");
     } 
-    
   };
 
-  // Mantenemos la referencia siempre al día con los últimos estados
   useEffect(() => {
     procesarComandoRef.current = procesarComandoVozGlobal;
   });
@@ -199,7 +186,6 @@ export default function ButtonPanel({
       const frase = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
       console.log("Asistente de voz entendió:", frase);
       
-      // Llamamos a través de la referencia para evitar cierres de entorno léxico viejos
       if (procesarComandoRef.current) {
         procesarComandoRef.current(frase);
       }
@@ -217,9 +203,7 @@ export default function ButtonPanel({
           try { 
             recognition.start(); 
             console.log("🎙️ Micrófono reconectado automáticamente.");
-          } catch (e) {
-            // Ignoramos re-intentos si ya está corriendo
-          }
+          } catch (e) {}
         }, 300);
       }
     };
@@ -426,30 +410,85 @@ export default function ButtonPanel({
   };
 
   return (
-    <div className="flex h-screen overflow-visible">
-      <div className={`border-l border-white/10 overflow-hidden transition-all duration-500 bg-slate-950/20 backdrop-blur-xl ${isOpen ? "w-[380px]" : "w-0"}`}>
-        <div className={`h-full p-6 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>{renderSection()}</div>
+    <div className="flex flex-col md:flex-row h-full md:h-screen overflow-visible">
+      
+      {/* PANEL FLOTANTE DESPLEGABLE (SÓLO ESCRITORIO O MODAL MOBILE SI SE ABRE) */}
+      <div className={`overflow-hidden transition-all duration-500 bg-slate-950/95 md:bg-slate-950/20 backdrop-blur-xl border-white/10 ${
+        isOpen 
+          ? "fixed inset-x-0 bottom-24 top-20 z-40 md:relative md:inset-auto md:w-[380px] md:h-full border-t md:border-t-0 md:border-l" 
+          : "w-0 h-0 md:w-0 md:h-full"
+      }`}>
+        <div className={`h-full p-6 overflow-y-auto transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}>
+          {renderSection()}
+        </div>
       </div>
-      <div className="w-20 bg-slate-900/40 backdrop-blur-md border-l border-white/10 flex flex-col items-center py-10 gap-8 h-full z-10">
-        <button onClick={() => toggleSection("history")} className="text-white hover:text-cyan-400 transition"><History /></button>
-        <button onClick={() => toggleSection("keywords")} className="text-white hover:text-cyan-400 transition"><KeyRound /></button>
-        <button onClick={() => toggleSection("grammar")} className="text-white hover:text-cyan-400 transition"><Brain /></button>
-        <button onClick={() => toggleSection("speech")} className="text-white hover:text-cyan-400 transition"><Volume2 /></button>
-        <button onClick={() => toggleSection("Calculos")} className="text-2xl hover:scale-110 transition">📖</button>
+
+      {/* 🎛️ CONTENEDOR DE BOTONES (Barra Lateral en Escritorio / Footer Deslizable Horizontal en Celular) */}
+      <div className="w-full md:w-20 bg-slate-900/90 md:bg-slate-900/40 backdrop-blur-md border-t md:border-t-0 md:border-l border-white/10 flex flex-row md:flex-col items-center justify-between md:justify-start px-4 py-3 md:py-10 gap-4 md:gap-8 h-20 md:h-full overflow-x-auto md:overflow-x-visible no-scrollbar select-none">
         
-        <button onClick={handleMic} className={`w-12 h-12 rounded-full flex items-center justify-center transition shadow-lg relative ${micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"}`}>
-          <Mic />
+        <button 
+          onClick={() => toggleSection("history")} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+            active === "history" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+          }`}
+        >
+          <History className="w-5 h-5" />
+        </button>
+        
+        <button 
+          onClick={() => toggleSection("keywords")} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+            active === "keywords" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+          }`}
+        >
+          <KeyRound className="w-5 h-5" />
+        </button>
+        
+        <button 
+          onClick={() => toggleSection("grammar")} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+            active === "grammar" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+          }`}
+        >
+          <Brain className="w-5 h-5" />
+        </button>
+        
+        <button 
+          onClick={() => toggleSection("speech")} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border transition ${
+            active === "speech" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "text-white border-white/10 bg-slate-950/40 hover:text-cyan-400"
+          }`}
+        >
+          <Volume2 className="w-5 h-5" />
+        </button>
+        
+        <button 
+          onClick={() => toggleSection("Calculos")} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border text-xl transition ${
+            active === "Calculos" ? "bg-cyan-500 border-cyan-400 text-slate-950 shadow-lg" : "border-white/10 bg-slate-950/40 hover:scale-110"
+          }`}
+        >
+          <Gamepad2 className="w-5 h-5 text-white group-hover:text-cyan-400" />
+        </button>
+        
+        <button 
+          onClick={handleMic} 
+          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition shadow-lg relative ${
+            micOn ? "bg-green-500 text-white animate-pulse" : "bg-red-500 text-white"
+          }`}
+        >
+          <Mic className="w-5 h-5" />
           {micOn && <span className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />}
         </button>
 
         <button 
           onClick={exportarAPDF} 
-          className="text-white hover:text-red-400 transition mt-2 flex flex-col items-center gap-1"
+          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10 bg-slate-950/40 text-white hover:text-red-400 transition"
           title="Exportar PDF"
         >
-          <FileDown className="w-6 h-6" />
-          <span className="text-[10px] text-gray-400">PDF</span>
+          <FileDown className="w-5 h-5" />
         </button>
+
       </div>
     </div>
   );
