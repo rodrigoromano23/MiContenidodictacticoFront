@@ -70,7 +70,7 @@ export default function SubirMaterial() {
       formData.append("contenido", contenido);
       formData.append("docente", docente);
 
-      formData.append("x-admin-password", "admin123");
+      formData.append("admin-password", "admin123");
 
       if (imagenes.length > 0) {
         imagenes.forEach((file) => {
@@ -84,9 +84,7 @@ export default function SubirMaterial() {
 
       const res = await fetch("https://micontenidodidactico.onrender.com/api/materials", {
         method: "POST",
-        headers: {
-          "x-admin-password": "admin123"
-        },
+       
         body: formData
       });
 
