@@ -428,7 +428,7 @@ export default function ButtonPanel({
     </div>
 
     {/* 🎛️ CONTENEDOR DE BOTONES (Fijo abajo, centrado vertical estricto e independiente) */}
-    <div className="fixed bottom-0 left-0 w-full h-20 bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
+    <div className="fixed bottom-0 left-0 w-full h-20 z-[100] bg-[#1e293b]/95 backdrop-blur-md border-t border-white/10 flex flex-row items-center justify-start px-5 gap-4 overflow-x-auto no-scrollbar z-50 md:relative md:bottom-auto md:left-auto md:w-20 md:h-full md:flex-col md:py-10 md:gap-8 md:overflow-x-visible md:border-t-0 md:border-l">
       
       <button 
         onClick={() => toggleSection("history")} 
