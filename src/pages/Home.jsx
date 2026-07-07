@@ -367,6 +367,7 @@ export default function Home() {
               setSeccionAbierta={setSeccionAbierta}
               isMobile={true}
             />
+            )}
           </div>
         )}
       </div>
