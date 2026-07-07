@@ -14,7 +14,7 @@ export default function Home() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [aiData, setAiData] = useState(null);
   
-  // VISOR DE IMANES
+  // VISOR DE IMAGENES
   const [selectedImage, setSelectedImage] = useState(null);
   
   const cleanUrl = (url) => {
@@ -22,7 +22,7 @@ export default function Home() {
     return url.replace(/\[|\]|\(.*?\)/g, "").trim();
   };
 
-  const API_URL = "https://micenidodidactico.onrender.com/api/materials";
+  const API_URL = "https://micontenidodidactico.onrender.com/api/materials";
 
   const fetchMaterials = async () => {
     const res = await fetch(API_URL);
@@ -38,6 +38,7 @@ export default function Home() {
     );
   };
 
+  // REFACTORIZADO: Acepta opcionalmente un string directo para que los comandos de voz no dependan del estado asíncrono
   const handleSearch = async (forcedQuery) => {
     const textoABuscar = typeof forcedQuery === "string" ? forcedQuery : query;
     if (!textoABuscar.trim()) return;
@@ -63,7 +64,7 @@ export default function Home() {
       console.error(error);
       setResults([]);
     } finally {
-      loading(false);
+      setLoading(false);
     }
   };
 
@@ -75,9 +76,11 @@ export default function Home() {
     return item.imagen ? [item.imagen] : [];
   };
 
+  // Capturador y ejecutor de comandos por voz globales
   const handleVoiceCommand = (cmd) => {
     console.log("Comando de voz recibido en Home:", cmd);
 
+    // 🔍 COMANDO: BUSCAR CONTENIDO EN TIEMPO REAL
     if (cmd.type === "SEARCH") {
       const valorLimpio = cmd.value && typeof cmd.value === "string"
         ? cmd.value.replace(/[\.,]+/g, "").trim()
@@ -86,9 +89,11 @@ export default function Home() {
       console.log("🚀 Buscando en BD valor 100% limpio:", valorLimpio);
 
       setQuery(valorLimpio);
-      handleSearch(valorLimpio);
+      handleSearch(valorLimpio); // Dispara la búsqueda inmediata en base de datos sin puntos molestos
     }
   
+
+    // 🎛️ COMANDOS: CONTROL DE VISTAS
     if (cmd.type === "OPEN_PANEL") setSearched(true);
     if (cmd.type === "CLOSE_PANEL") {
       setSearched(false);
@@ -97,7 +102,9 @@ export default function Home() {
       setSelectedImage(null);
     }
 
+    // 🖼️ COMANDOS: SECCIÓN DE IMÁGENES
     if (cmd.type === "OPEN_IMAGES" || cmd.type === "VIEW_IMAGES") {
+      // Si hay un resultado cargado y contiene imágenes, abre la primera en el visor Picasa
       if (results.length > 0) {
         const imagenes = getImagesArray(results[0]);
         if (imagenes.length > 0) {
@@ -110,29 +117,36 @@ export default function Home() {
       setSelectedImage(null);
     }
   };
-
+  // 👈 3. Añade este useEffect para apagar la intro a los 8 segundos exactos
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowIntro(false);
-    }, 8000);
+    }, 8000); // 8000 milisegundos = 8 segundos
 
     return () => clearTimeout(timer);
   }, []);
 
+
+  // 🎙️ ESCUCHADORES DE COMANDOS DE VOZ DESDE EL PANEL DE BOTONES
   useEffect(() => {
+    // Escuchar cuando se pida buscar algo
     const manejarBusquedaVoz = (e) => {
       const palabraClave = e.detail;
       setQuery(palabraClave);
-      handleSearch(palabraClave);
+      handleSearch(palabraClave); // Ejecuta la búsqueda real inmediatamente
     };
 
+    // ✨ ESCUCHA ACTUALIZADA: Recibe un objeto { accion, numero }
     const manejarImagenesVoz = (e) => {
       const { accion, numero } = e.detail || {};
+      
+      // Manejar la acción por si envían un string directo o el objeto estructurado
       const accionReal = typeof e.detail === "string" ? e.detail : accion;
 
       if (accionReal === "ABRIR" && results.length > 0) {
         const imagenes = getImagesArray(results[0]);
         if (imagenes.length > 0) {
+          // Si especificó un número válido (ej: imagen 2 -> índice 1), abre esa. Si no, abre la primera [0].
           if (numero && imagenes[numero - 1]) {
             setSelectedImage(imagenes[numero - 1]);
           } else {
@@ -140,27 +154,28 @@ export default function Home() {
           }
         }
       } else if (accionReal === "CERRAR") {
-        setSelectedImage(null);
+        setSelectedImage(null); // Cierra el visor Picasa
       }
     };
 
+    // Registrar los eventos globales en el navegador
     window.addEventListener("voz-buscar-titulo", manejarBusquedaVoz);
     window.addEventListener("voz-control-imagenes", manejarImagenesVoz);
 
+    // Limpieza al desmontar el componente
     return () => {
       window.removeEventListener("voz-buscar-titulo", manejarBusquedaVoz);
       window.removeEventListener("voz-control-imagenes", manejarImagenesVoz);
     };
-  }, [results]);
-
+  }, [results]); // Se actualiza si cambian los resultados para poder abrir la imagen correcta
   if (showIntro) {
-    return <Loader />;
+    return <Loader />; // Si showIntro es true, se renderiza la presentación futurista cubriendo todo
   }
 
   return (
-    // 📱 CAMBIO: En celulares usa "flex-col overflow-y-auto h-auto", en pantallas grandes "md:flex-row md:h-screen md:overflow-hidden"
-    <div className="relative flex flex-col md:flex-row h-auto md:h-screen bg-slate-950 text-white overflow-y-auto md:overflow-hidden select-none">
+    <div className="relative flex h-screen bg-slate-950 text-white overflow-hidden select-none">
       
+      {/* 🎙 INYECCIÓN DE ESTILOS CSS PARA LA LÍNEA Y EL SCROLL INTERNO */}
       <style>{`
         @keyframes expandLine {
           from { width: 0%; opacity: 0; }
@@ -186,12 +201,14 @@ export default function Home() {
         }
       `}</style>
 
+      {/* 🎙 VOZ GLOBAL ENLAZADA A INTERFAZ */}
       <VoiceAssistant
         enabled={micEnabled}
         onToggleMic={setMicEnabled}
         onCommand={handleVoiceCommand}
       />
 
+      {/* 🖼️ PORTADA DE FONDO FIJA */}
       {searched && results[0]?.portada && (
         <>
           <div
@@ -203,21 +220,19 @@ export default function Home() {
       )}
 
       {/* 📌 MAIN CONTENT (IZQUIERDA) */}
-      {/* 📱 CAMBIO: Relleno adaptable "p-6 md:p-12" */}
-      <div className="flex-1 relative flex flex-col justify-between p-6 md:p-12 overflow-hidden z-10 w-full">
+      <div className="flex-1 relative flex flex-col justify-between p-12 overflow-hidden z-10">
         
         {/* SEARCH BAR */}
-        {/* 📱 CAMBIO: En celulares se posiciona de forma estática o fluida según si buscó, evitando "fixed" estricto que tapa cosas */}
         <div
-          className={`transition-all duration-500 ease-in-out z-20 ${
+          className={`fixed transition-all duration-500 ease-in-out z-20 ${
             isCompact
-              ? "md:fixed md:top-6 md:left-6 w-full md:w-[280px] scale-95 mb-6 md:mb-0"
-              : "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-6"
+              ? "top-6 left-6 w-[280px] scale-95"
+              : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl"
           }`}
         >
           {!isCompact && (
             <div className="text-center mb-6">
-              <h1 className="text-3xl md:text-4xl font-bold">Biblioteca Digital</h1>
+              <h1 className="text-4xl font-bold">Biblioteca Digital</h1>
               <p className="text-gray-400 mt-2">Buscá materiales de estudio</p>
             </div>
           )}
@@ -251,19 +266,19 @@ export default function Home() {
         </div>
 
         {/* CONTENEDOR DE RESULTADOS */}
-        {/* 📱 CAMBIO: Ajuste de márgenes superiores según el dispositivo "mt-4 md:mt-16" */}
         {searched && results.length > 0 && (
-          <div className="w-full flex-1 flex flex-col mt-4 md:mt-16 justify-between overflow-hidden">
+          <div className="w-full flex-1 flex flex-col mt-16 justify-between overflow-hidden">
             {results.map((item, i) => (
               <div key={i} className="w-full flex flex-col flex-1 overflow-hidden justify-between">
                 
                 {/* 🏷️ TÍTULO */}
                 <div className="w-full mb-2 flex-shrink-0">
-                  {/* 📱 CAMBIO: El texto ahora mide 32px en celular y 56px en pantallas grandes gracias a "text-3xl md:text-[56px]" */}
                   <h2
-                    className="text-left text-white tracking-wide text-3xl md:text-[56px] font-bold"
+                    className="text-left text-white tracking-wide"
                     style={{
                       fontFamily: '"Times New Roman", Times, serif',
+                      fontSize: "56px",
+                      fontWeight: "bold",
                       textShadow: "0 0 15px rgba(234, 179, 8, 0.6), 0 0 2px rgba(234, 179, 8, 0.9)",
                     }}
                   >
@@ -273,31 +288,32 @@ export default function Home() {
                 </div>
 
                 {/* 📄 TARJETA DE CONTENIDO */}
-                {/* 📱 CAMBIO: Altura máxima flexible. En celu "max-h-[50vh]", en PC "md:max-h-[44vh]" e interlineado adaptable */}
-                <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-4 md:p-6 shadow-2xl overflow-y-auto text-scroll my-4 max-h-[50vh] md:max-h-[44vh]">
+                <div className="w-full flex-1 bg-sky-500/10 backdrop-blur-md border border-sky-400/20 rounded-none p-6 shadow-2xl overflow-y-auto text-scroll my-4 max-h-[44vh]">
                   <div
-                    className="text-gray-100 leading-7 md:leading-9 whitespace-pre-wrap pr-2 text-base md:text-[20px]"
+                    className="text-gray-100 leading-9 whitespace-pre-wrap pr-2"
                     style={{
                       fontFamily: "Arial, Helvetica, sans-serif",
+                      fontSize: "20px",
                     }}
                   >
                     <TypeWriter text={item.contenido} />
                   </div>
                 </div>
 
-                {/* 🖼️ CUADRÍCULA DE IMÁGENES AL PIE */}
+                {/* 🖼️ CUADRÍCULA DE IMÁGENES AL PIE (AQUÍ VA EL HOVER ENUMERADO) */}
                 {getImagesArray(item).length > 0 && (
-                  <div className="w-full mb-4 md:mb-2 flex-shrink-0">
+                  <div className="w-full mb-2 flex-shrink-0">
                     <p className="text-xs text-sky-300 mb-2 font-semibold uppercase tracking-widest">Imágenes Adjuntas</p>
-                    {/* 📱 CAMBIO: En celular se acomoda a 2 columnas fijas y en PC pasa a 4 "grid-cols-2 md:grid-cols-4" */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       {getImagesArray(item).slice(0, 4).map((imgUrl, index) => (
                         <div 
                           key={index} 
                           onClick={() => setSelectedImage(imgUrl)}
+                          
                           className="group relative aspect-[16/10] bg-black/40 rounded-lg overflow-hidden border border-white/10 shadow-md cursor-pointer hover:scale-[1.02] hover:border-sky-400 transition-all duration-300"
                         >
-                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 shadow-lg select-none">
+                          {/* ✨ NUEVO: Indicador flotante con el número de la imagen */}
+                          <div className="absolute top-2 left-2 bg-cyan-400 text-slate-950 font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg select-none">
                             {index + 1}
                           </div>
 
@@ -319,9 +335,8 @@ export default function Home() {
       </div>
 
       {/* 📌 PANEL FIJO A LA DERECHA */}
-      {/* 📱 CAMBIO: En móviles se pone abajo del todo ocupando el 100% del ancho "w-full md:w-auto" */}
       {searched && (
-        <div className="z-20 relative flex-shrink-0 bg-slate-950/30 backdrop-blur-2xl w-full md:w-auto">
+        <div className="z-20 relative flex-shrink-0 bg-slate-950/30 backdrop-blur-2xl">
           <ButtonPanel
             searchHistory={searchHistory}
             material={results[0]}
@@ -333,23 +348,23 @@ export default function Home() {
       {/* 🖼️ VISOR DE IMÁGENES ESTILO PICASA 3 */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
           onClick={() => setSelectedImage(null)}
         >
           <button 
-            className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition z-50"
+            className="absolute top-6 right-6 text-white text-4xl font-light hover:text-sky-400 transition"
             onClick={() => setSelectedImage(null)}
           >
             ✕
           </button>
           <div 
-            className="max-w-full md:max-w-[85vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm"
+            className="max-w-[85vw] max-h-[85vh] flex items-center justify-center p-2 bg-white/5 border border-white/10 shadow-2xl rounded-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <img 
               src={selectedImage} 
               alt="Visualización ampliada" 
-              className="max-w-full max-h-[75vh] md:max-h-[80vh] object-contain shadow-2xl"
+              className="max-w-full max-h-[80vh] object-contain shadow-2xl"
             />
           </div>
         </div>
