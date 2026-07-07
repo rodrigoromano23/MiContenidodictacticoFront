@@ -70,8 +70,6 @@ export default function SubirMaterial() {
       formData.append("contenido", contenido);
       formData.append("docente", docente);
 
-      formData.append("admin-password", "admin123");
-
       if (imagenes.length > 0) {
         imagenes.forEach((file) => {
           formData.append("image", file);
@@ -82,9 +80,10 @@ export default function SubirMaterial() {
         formData.append("portada", portada);
       }
 
-      const res = await fetch("https://micontenidodidactico.onrender.com/api/materials", {
+      // 🔥 ENVIAMOS LA CONTRASEÑA DIRECTAMENTE EN LA URL
+      // Esto previene cualquier problema con Multer o filtros de CORS en Render
+      const res = await fetch("https://micontenidodidactico.onrender.com/api/materials?adminPassword=admin123", {
         method: "POST",
-       
         body: formData
       });
 
