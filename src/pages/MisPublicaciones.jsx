@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { Loader2, Eraser, Edit3, Trash2, Search, User, BookOpen, ChevronLeft, Save, UploadCloud } from "lucide-react";
-import { getMaterials, deleteMaterial } from "../services/api";
+import { getMaterials } from "../services/api";
 
 export default function MisPublicaciones() {
   const [docente, setDocente] = useState("");
@@ -17,14 +17,18 @@ export default function MisPublicaciones() {
   const [editPortada, setEditPortada] = useState(null);
   const [editPreviewPortada, setEditPreviewPortada] = useState("");
 
+  // 🔥 Contraseña maestra unificada
+  const CLAVE_ADMIN = "1234";
+
   // Cargar base inicial de materiales
   const cargarMateriales = async () => {
     try {
       const data = await getMaterials();
-      setTodos(data);
-      return data;
+      setTodos(data || []);
+      return data || [];
     } catch (error) {
       console.error("Error al cargar materiales:", error);
+      return [];
     }
   };
 
@@ -33,20 +37,23 @@ export default function MisPublicaciones() {
   }, []);
 
   // Filtrar sugerencias únicas de docentes para evitar repeticiones en la lista
-  const docentesUnicos = Array.from(new Set(todos.map((m) => m.docente).filter(Boolean)));
+  const docentesUnicos = Array.from(new Set(todos.map((m) => m.docente?.trim()).filter(Boolean)));
   
   const sugerencias = docente.trim()
     ? docentesUnicos.filter((d) => d.toLowerCase().includes(docente.toLowerCase()) && d.toLowerCase() !== docente.toLowerCase())
     : [];
 
   const ejecutarBusqueda = (nombre) => {
-    const busqueda = nombre || docente;
-    if (!busqueda.trim()) return;
+    const busqueda = (nombre || docente).trim();
+    if (!busqueda) return;
 
     setDocente(busqueda);
+    
+    // 🔥 SOLUCIÓN AL FILTRADO: Usamos .includes() o pasamos ambos a minúsculas y limpiamos espacios (.trim())
     const filtrados = todos.filter(
-      (m) => m.docente?.toLowerCase() === busqueda.toLowerCase()
+      (m) => m.docente?.toLowerCase().trim() === busqueda.toLowerCase()
     );
+    
     setResultados(filtrados);
 
     if (filtrados.length === 0) {
@@ -83,11 +90,9 @@ export default function MisPublicaciones() {
 
     try {
       setLoading(true);
-      const res = await fetch(`https://micontenidodidactico.onrender.com/api/materials/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-admin-password": "admin123"
-        }
+      // 🔥 SOLUCIÓN: Pasamos la clave real "1234" por parámetro URL igual que en la subida
+      const res = await fetch(`https://micontenidodidactico.onrender.com/api/materials/${id}?adminPassword=${CLAVE_ADMIN}`, {
+        method: "DELETE"
       });
 
       if (!res.ok) throw new Error("No se pudo eliminar el material");
@@ -101,7 +106,7 @@ export default function MisPublicaciones() {
       });
 
       const dataActualizada = await cargarMateriales();
-      setResultados(dataActualizada.filter(m => m.docente?.toLowerCase() === docente.toLowerCase()));
+      setResultados(dataActualizada.filter(m => m.docente?.toLowerCase().trim() === docente.toLowerCase().trim()));
     } catch (error) {
       Swal.fire("Error", "No se pudo eliminar el archivo del servidor.", "error");
     } finally {
@@ -144,11 +149,9 @@ export default function MisPublicaciones() {
         formData.append("portada", editPortada);
       }
 
-      const res = await fetch(`https://micontenidodidactico.onrender.com/api/materials/${editandoItem._id}`, {
+      // 🔥 SOLUCIÓN: Enviamos la clave real "1234" en la URL del método PUT
+      const res = await fetch(`https://micontenidodidactico.onrender.com/api/materials/${editandoItem._id}?adminPassword=${CLAVE_ADMIN}`, {
         method: "PUT",
-        headers: {
-          "x-admin-password": "admin123"
-        },
         body: formData
       });
 
@@ -157,14 +160,14 @@ export default function MisPublicaciones() {
       Swal.fire({
         icon: "success",
         title: "¡Material Actualizado!",
-        text: "Los cambios se guardaron y sincronizarices con éxito.",
+        text: "Los cambios se guardaron y sincronizaron con éxito.",
         timer: 2000,
         showConfirmButton: false
       });
 
       setEditandoItem(null); // Volver al listado principal
       const dataActualizada = await cargarMateriales();
-      setResultados(dataActualizada.filter(m => m.docente?.toLowerCase() === docente.toLowerCase()));
+      setResultados(dataActualizada.filter(m => m.docente?.toLowerCase().trim() === docente.toLowerCase().trim()));
     } catch (error) {
       console.error(error);
       Swal.fire("Error", "No se pudieron actualizar los datos en el servidor.", "error");
@@ -295,69 +298,68 @@ export default function MisPublicaciones() {
           </div>
 
           {/* 📦 RESULTADOS ESTILO TARJETAS CINEMÁTICAS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-            {resultados.map((item) => (
-              <div
-                key={item._id}
-                className="bg-slate-900/30 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-white/20 transition shadow-xl"
-              >
-                {/* CONTENEDOR MINIATURA CON TÍTULO SUPERPUESTO */}
-                <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
-                  {item.portada ? (
-                    <img 
-                      src={item.portada} 
-                      alt={item.titulo} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-900"><BookOpen className="w-8 h-8" /></div>
-                  )}
-                  {/* Degradado para legibilidad del título */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                  
-                  {/* Título sobre la portada */}
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-lg font-bold text-white tracking-wide leading-snug drop-shadow-md">
-                      {item.titulo}
-                    </h3>
+          {resultados.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+              {resultados.map((item) => (
+                <div
+                  key={item._id}
+                  className="bg-slate-900/30 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-white/20 transition shadow-xl"
+                >
+                  <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
+                    {item.portada ? (
+                      <img 
+                        src={item.portada} 
+                        alt={item.titulo} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-600 bg-slate-900"><BookOpen className="w-8 h-8" /></div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                    
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-lg font-bold text-white tracking-wide leading-snug drop-shadow-md">
+                        {item.titulo}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-4 bg-slate-950/20">
+                    <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
+                      {item.contenido || "Sin contenido descriptivo."}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-white/5 pt-3">
+                      <span>Docente: <strong className="text-cyan-400/80">{item.docente}</strong></span>
+                      <span>Anexos: <strong>{item.imagenes?.length || 0} fotos</strong></span>
+                    </div>
+
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        onClick={() => iniciarEdicion(item)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-cyan-500 hover:text-slate-950 border border-white/10 text-slate-200 py-2 rounded-xl text-xs font-semibold transition"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" /> Editar
+                      </button>
+
+                      <button
+                        onClick={() => eliminar(item._id)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-600 border border-red-500/20 text-red-400 hover:text-white py-2 rounded-xl text-xs font-semibold transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
 
-                {/* CUERPO INFERIOR DE LA TARJETA */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-4 bg-slate-950/20">
-                  <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                    {item.contenido || "Sin contenido descriptivo."}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 border-t border-white/5 pt-3">
-                    <span>Docente: <strong className="text-cyan-400/80">{item.docente}</strong></span>
-                    <span>Anexos: <strong>{item.imagenes?.length || 0} fotos</strong></span>
-                  </div>
-
-                  {/* ⚙ ACCIONES */}
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={() => iniciarEdicion(item)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-cyan-500 hover:text-slate-950 border border-white/10 text-slate-200 py-2 rounded-xl text-xs font-semibold transition"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" /> Editar
-                    </button>
-
-                    <button
-                      onClick={() => eliminar(item._id)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-600 border border-red-500/20 text-red-400 hover:text-white py-2 rounded-xl text-xs font-semibold transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {resultados.length === 0 && docente && (
+          {resultados.length === 0 && (
             <div className="text-center py-12 bg-slate-900/10 rounded-2xl border border-dashed border-white/5">
-              <p className="text-sm text-slate-500">Presiona Enter para buscar las publicaciones del docente escrito.</p>
+              <p className="text-sm text-slate-500">
+                {docente ? `No se encontraron publicaciones para "${docente}".` : "Escribe el nombre del docente exacto y presiona Enter para ver sus materiales."}
+              </p>
             </div>
           )}
         </div>
